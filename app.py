@@ -21,7 +21,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Telegram bot uygulaması
-application = ApplicationBuilder().token(TTOKEN).build()
+application = ApplicationBuilder().token(TOKEN).build()
 
 # Hatırlatma fonksiyonu
 async def remind(context: ContextTypes.DEFAULT_TYPE):
