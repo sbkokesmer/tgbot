@@ -1,8 +1,8 @@
 import logging
 import os
 from flask import Flask, request
-from telegram import Update
-from telegram.ext import Application, CommandHandler, ContextTypes
+from telegram import Update, Bot
+from telegram.ext import Application, CommandHandler, Dispatcher, ContextTypes
 from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime, timedelta
 
@@ -20,8 +20,9 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-# Telegram bot uygulaması
-application = Application.builder().token(TOKEN).build()
+# Telegram botu ve dispatcher
+bot = Bot(token=TOKEN)
+dispatcher = Dispatcher(bot, None, workers=0)
 
 # Hatırlatma fonksiyonu
 async def remind(context: ContextTypes.DEFAULT_TYPE):
@@ -42,15 +43,19 @@ async def hatirlat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text('İki gün sonra hatırlatılacak!')
 
 # Handlers
-application.add_handler(CommandHandler("start", start))
-application.add_handler(CommandHandler("hatirlat", hatirlat))
+dispatcher.add_handler(CommandHandler("start", start))
+dispatcher.add_handler(CommandHandler("hatirlat", hatirlat))
 
 # Webhook view
 @app.route('/webhook', methods=['POST'])
 def webhook():
-    update = Update.de_json(request.get_json(force=True), application.bot)
-    application.update_queue.put(update)
-    return 'ok'
+    try:
+        update = Update.de_json(request.get_json(force=True), bot)
+        dispatcher.process_update(update)
+        return 'ok'
+    except Exception as e:
+        logger.error(f"Error handling the update: {e}")
+        return 'error', 500
 
 @app.route('/')
 def index():
