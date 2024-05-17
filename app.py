@@ -2,7 +2,7 @@ import logging
 import os
 from flask import Flask, request
 from telegram import Update
-from telegram.ext import Application, CommandHandler, ContextTypes
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime, timedelta
 
@@ -21,12 +21,12 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Telegram bot uygulaması
-application = Application.builder().token(TOKEN).build()
+application = ApplicationBuilder().token(TTOKEN).build()
 
 # Hatırlatma fonksiyonu
 async def remind(context: ContextTypes.DEFAULT_TYPE):
     job = context.job
-    await context.bot.send_message(job.context, text="Hatırlatma: İki gün önce planladığınız işi yapmayı unutmayın!")
+    await context.bot.send_message(chat_id=job.context, text="Hatırlatma: İki gün önce planladığınız işi yapmayı unutmayın!")
 
 # /start komutu
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
