@@ -2,7 +2,7 @@ import logging
 import os
 from flask import Flask, request
 from telegram import Update, Bot
-from telegram.ext import Application, CommandHandler, Dispatcher, ContextTypes
+from telegram.ext import Application, CommandHandler, ContextTypes, Dispatcher
 from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime, timedelta
 
@@ -50,6 +50,7 @@ dispatcher.add_handler(CommandHandler("hatirlat", hatirlat))
 @app.route('/webhook', methods=['POST'])
 def webhook():
     try:
+        logger.info("Webhook received")
         update = Update.de_json(request.get_json(force=True), bot)
         dispatcher.process_update(update)
         return 'ok'
