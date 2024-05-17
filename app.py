@@ -2,12 +2,12 @@ import logging
 import os
 from flask import Flask, request
 from telegram import Update
-from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
+from telegram.ext import Application, CommandHandler, ContextTypes
 from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime, timedelta
 
 # Bot token
-TOKEN = os.getenv('TELEGRAM_TOKEN', 'YOUR_TELEGRAM_BOT_TOKEN')
+TOKEN = os.getenv('TELEGRAM_TOKEN', '7130317633:AAGkQD2f_R3wI9IEhU_pG25BrSK5tD_GxdY')
 
 # Flask uygulaması
 app = Flask(__name__)
@@ -52,14 +52,9 @@ def webhook():
     application.update_queue.put(update)
     return 'ok'
 
-if __name__ == '__main__':
-    application.run_polling()
-
-# Flask'ın çalışması için Vercel giriş noktası
 @app.route('/')
 def index():
     return 'Bot is running!'
 
-# Vercel deployment için giriş noktası
-def handler(event, context):
-    return app(event, context)
+if __name__ == '__main__':
+    app.run(port=5000)
