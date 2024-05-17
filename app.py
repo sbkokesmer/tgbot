@@ -2,7 +2,7 @@ import logging
 import os
 from flask import Flask, request
 from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+from telegram.ext import Application, CommandHandler, ContextTypes
 from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime, timedelta
 
@@ -21,12 +21,12 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Telegram bot uygulaması
-application = ApplicationBuilder().token(TOKEN).build()
+application = Application.builder().token(TOKEN).build()
 
 # Hatırlatma fonksiyonu
 async def remind(context: ContextTypes.DEFAULT_TYPE):
     job = context.job
-    await context.bot.send_message(chat_id=job.context, text="Hatırlatma: İki gün önce planladığınız işi yapmayı unutmayın!")
+    await context.bot.send_message(job.context, text="Hatırlatma: İki gün önce planladığınız işi yapmayı unutmayın!")
 
 # /start komutu
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -61,9 +61,8 @@ def webhook():
 def index():
     return 'Bot is running!'
 
-# Flask uygulamasının giriş noktası
-if __name__ != '__main__':
-    # Vercel gereksinimlerine göre handler'ı tanımla
-    handler = app
-else:
+# Vercel için giriş noktası
+handler = app
+
+if __name__ == '__main__':
     app.run(port=5000)
