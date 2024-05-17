@@ -1,11 +1,16 @@
 import logging
+import os
+from flask import Flask, request
 from telegram import Update
-from telegram.ext import Application, CommandHandler, ContextTypes
+from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
 from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime, timedelta
 
 # Bot token
-TOKEN = '7130317633:AAGkQD2f_R3wI9IEhU_pG25BrSK5tD_GxdY'
+TOKEN = os.getenv('TELEGRAM_TOKEN', 'YOUR_TELEGRAM_BOT_TOKEN')
+
+# Flask uygulaması
+app = Flask(__name__)
 
 # Loglama ayarları
 logging.basicConfig(
@@ -14,6 +19,9 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger(__name__)
+
+# Telegram bot uygulaması
+application = Application.builder().token(TOKEN).build()
 
 # Hatırlatma fonksiyonu
 async def remind(context: ContextTypes.DEFAULT_TYPE):
@@ -33,13 +41,25 @@ async def hatirlat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     scheduler.add_job(remind, 'date', run_date=remind_time, args=[context], job_context=user_id)
     await update.message.reply_text('İki gün sonra hatırlatılacak!')
 
-def main():
-    application = Application.builder().token(TOKEN).build()
+# Handlers
+application.add_handler(CommandHandler("start", start))
+application.add_handler(CommandHandler("hatirlat", hatirlat))
 
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("hatirlat", hatirlat))
-
-    application.run_polling()
+# Webhook view
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    update = Update.de_json(request.get_json(force=True), application.bot)
+    application.update_queue.put(update)
+    return 'ok'
 
 if __name__ == '__main__':
-    main()
+    application.run_polling()
+
+# Flask'ın çalışması için Vercel giriş noktası
+@app.route('/')
+def index():
+    return 'Bot is running!'
+
+# Vercel deployment için giriş noktası
+def handler(event, context):
+    return app(event, context)
