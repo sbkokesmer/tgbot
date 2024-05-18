@@ -1,63 +1,54 @@
 import logging
-from flask import Flask
 from telegram import Update
-from telegram.ext import Updater, CommandHandler, CallbackContext
-from threading import Thread
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+from apscheduler.schedulers.background import BackgroundScheduler
+from datetime import datetime, timedelta
 
-# Tokeni doğrudan burada belirtiyoruz
-TOKEN = "7130317633:AAGkQD2f_R3wI9IEhU_pG25BrSK5tD_GxdY"
+# Bot token
+TOKEN = '7130317633:AAGkQD2f_R3wI9IEhU_pG25BrSK5tD_GxdY'
 
-# Logging ayarları
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+# Loglama ayarları
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+)
+
 logger = logging.getLogger(__name__)
 
-app = Flask(__name__)
+# APScheduler nesnesini global olarak tanımla
+scheduler = BackgroundScheduler()
+scheduler.start()
 
-def start(update: Update, context: CallbackContext) -> None:
-    logger.info("Start command received")
-    update.message.reply_text('Merhaba! Hatırlatıcı botuna hoş geldin. /reminder <mesaj> komutu ile hatırlatma oluşturabilirsin.')
+# Hatırlatma fonksiyonu
+async def remind(context: ContextTypes.DEFAULT_TYPE, chat_id):
+    await context.bot.send_message(chat_id, text="Hatırlatma: İki gün önce planladığınız işi yapmayı unutmayın!")
 
-def reminder(update: Update, context: CallbackContext) -> None:
-    logger.info("Reminder command received")
-    try:
-        # Kullanıcının girdiği hatırlatma mesajını al
-        reminder_message = ' '.join(context.args)
-        chat_id = update.message.chat_id
-        
-        # Hatırlatma mesajını kaydet
-        context.job_queue.run_once(send_reminder, 2 * 24 * 60 * 60, context=(chat_id, reminder_message), name=str(chat_id))
-        
-        update.message.reply_text('Hatırlatma ayarlandı!')
-    except (IndexError, ValueError):
-        update.message.reply_text('Doğru format: /reminder <mesaj>')
+# /start komutu
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text('Merhaba! Hatırlatılmak istediğiniz işi /hatirlat komutu ile belirtebilirsiniz.')
 
-def send_reminder(context: CallbackContext) -> None:
-    job = context.job
-    context.bot.send_message(job.context[0], text=f'📅 Hatırlatma: {job.context[1]}')
+# /hatirlat komutu
+async def hatirlat(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    chat_id = update.message.chat_id
+    remind_time = datetime.now() + timedelta(days=2)
+    scheduler.add_job(remind, 'date', run_date=remind_time, args=[context, chat_id])
+    await update.message.reply_text('İki gün sonra hatırlatılacak!')
 
-def run_bot():
-    # Updater oluştur
-    updater = Updater(TOKEN, use_context=True)
+# Mesajları dinleme fonksiyonu
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    text = update.message.text
+    if "en büyük" in text.lower():
+        await update.message.reply_text("FENERBAHÇE")
 
-    # Dispatcher al
-    dispatcher = updater.dispatcher
+def main():
+    application = Application.builder().token(TOKEN).build()
 
-    # Komutları işleyicilere ekle
-    dispatcher.add_handler(CommandHandler("start", start))
-    dispatcher.add_handler(CommandHandler("reminder", reminder))
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("hatirlat", hatirlat))
+    # Grup mesajlarını da içeren mesajları dinle
+    application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND) & (filters.ChatType.GROUPS | filters.ChatType.PRIVATE), handle_message))
 
-    # Botu başlat
-    updater.start_polling()
-    updater.idle()
+    application.run_polling()
 
-# Flask uygulamasını çalıştır
-@app.route("/")
-def index():
-    return "Bot is running."
-
-if __name__ == "__main__":
-    # Botu ayrı bir iş parçacığında çalıştır
-    bot_thread = Thread(target=run_bot)
-    bot_thread.start()
-    # Flask uygulamasını çalıştır
-    app.run(debug=True, use_reloader=False)
+if __name__ == '__main__':
+    main()
