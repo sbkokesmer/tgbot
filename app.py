@@ -1,4 +1,4 @@
-import os
+import logging
 from flask import Flask
 from telegram import Update
 from telegram.ext import Updater, CommandHandler, CallbackContext
@@ -7,12 +7,18 @@ from threading import Thread
 # Tokeni doğrudan burada belirtiyoruz
 TOKEN = "7130317633:AAGkQD2f_R3wI9IEhU_pG25BrSK5tD_GxdY"
 
+# Logging ayarları
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 app = Flask(__name__)
 
 def start(update: Update, context: CallbackContext) -> None:
+    logger.info("Start command received")
     update.message.reply_text('Merhaba! Hatırlatıcı botuna hoş geldin. /reminder <mesaj> komutu ile hatırlatma oluşturabilirsin.')
 
 def reminder(update: Update, context: CallbackContext) -> None:
+    logger.info("Reminder command received")
     try:
         # Kullanıcının girdiği hatırlatma mesajını al
         reminder_message = ' '.join(context.args)
