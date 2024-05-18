@@ -1,6 +1,6 @@
-import time
 from telegram import Update
 from telegram.ext import Updater, CommandHandler, CallbackContext
+from threading import Thread
 
 # Tokeni doğrudan burada belirtiyoruz
 TOKEN = "7130317633:AAGkQD2f_R3wI9IEhU_pG25BrSK5tD_GxdY"
@@ -27,7 +27,7 @@ def send_reminder(context: CallbackContext) -> None:
 
 def main() -> None:
     # Updater oluştur
-    updater = Updater(TOKEN)
+    updater = Updater(TOKEN, use_context=True)
 
     # Dispatcher al
     dispatcher = updater.dispatcher
