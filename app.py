@@ -1,9 +1,13 @@
+import os
+from flask import Flask
 from telegram import Update
 from telegram.ext import Updater, CommandHandler, CallbackContext
 from threading import Thread
 
 # Tokeni doğrudan burada belirtiyoruz
 TOKEN = "7130317633:AAGkQD2f_R3wI9IEhU_pG25BrSK5tD_GxdY"
+
+app = Flask(__name__)
 
 def start(update: Update, context: CallbackContext) -> None:
     update.message.reply_text('Merhaba! Hatırlatıcı botuna hoş geldin. /reminder <mesaj> komutu ile hatırlatma oluşturabilirsin.')
@@ -25,7 +29,7 @@ def send_reminder(context: CallbackContext) -> None:
     job = context.job
     context.bot.send_message(job.context[0], text=f'📅 Hatırlatma: {job.context[1]}')
 
-def main() -> None:
+def run_bot():
     # Updater oluştur
     updater = Updater(TOKEN, use_context=True)
 
@@ -40,5 +44,14 @@ def main() -> None:
     updater.start_polling()
     updater.idle()
 
-if __name__ == '__main__':
-    main()
+# Flask uygulamasını çalıştır
+@app.route("/")
+def index():
+    return "Bot is running."
+
+if __name__ == "__main__":
+    # Botu ayrı bir iş parçacığında çalıştır
+    bot_thread = Thread(target=run_bot)
+    bot_thread.start()
+    # Flask uygulamasını çalıştır
+    app.run(debug=True, use_reloader=False)
